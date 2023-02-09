@@ -130,6 +130,7 @@ async function main() {
                 return;
             }
         } while (rateLimited);
+        await delay(1000);
     }
 
     console.log(chalk.green("Complete!"));
