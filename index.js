@@ -70,7 +70,7 @@ async function main() {
         }
     }
 
-    const {token, token_type, bearer} = tokenJson;
+    const {access_token, token_type, bearer} = tokenJson;
 
     console.log(chalk.green("Successfully authenticated!"));
 
@@ -93,21 +93,19 @@ async function main() {
         headers: {
             'Accept': 'application/vnd.github+json',
             'User-Agent': 'Issuesheet (Will BL)',
-            'Authorization': `Bearer ${token}`
+            'Authorization': `Bearer ${access_token}`
         }
     }).then(r => r.json()).then(j => j['login']));
 
     const repo = cli.opts()['repo'].includes('/') ? cli.opts()['repo'] : `${user}/${cli.opts()['repo']}`;
 
     for (const issue of issues) {
-        console.log(JSON.stringify(issue));
-
         const res = await fetch(`https://api.github.com/repos/${repo}/issues`, {
             method: 'POST',
             headers: {
                 'Accept': 'application/vnd.github+json',
                 'User-Agent': 'Issuesheet (Will BL)',
-                'Authorization': `Bearer ${token}`
+                'Authorization': `Bearer ${access_token}`
             },
             body: JSON.stringify({
                 'title': issue.title,
@@ -115,10 +113,11 @@ async function main() {
             })
         });
 
+
         if (res.ok) {
             console.log(chalk.dim(`Created issue ${chalk.reset.bold.cyan('#'+((await res.json())['number']))}`));
         } else {
-            console.error(chalk.bold.red(`Failed to create issue! Error ${res.status}. Quitting.`));
+            console.error(chalk.bold.red(`Failed to create issue! Error ${res.status} (${await res.text()}). Quitting.`));
             return;
         }
     }
