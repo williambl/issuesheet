@@ -4,5 +4,12 @@
   "main": "index.js",
   "author": "Will BL",
   "license": "MIT",
-  "dependencies": {}
+  "type": "module",
+  "dependencies": {
+    "csv-parse": "^5.3.5",
+    "moment": "^2.29.4",
+    "node-fetch": "^3.3.0",
+    "open": "^8.4.1",
+    "query-string": "^8.1.0"
+  }
 }
