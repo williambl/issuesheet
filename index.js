@@ -111,7 +111,7 @@ async function main() {
                 },
                 body: JSON.stringify({
                     'title': issue.title,
-                    'body': issue.body
+                    'body': issue.desc
                 })
             });
 
