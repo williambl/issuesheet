@@ -5,6 +5,7 @@ import moment from "moment";
 import { parse } from "csv-parse/sync";
 import fs from "fs";
 import {Command} from "commander";
+import chalk from "chalk";
 
 const delay = ms => new Promise(resolve => setTimeout(resolve, ms))
 
@@ -22,7 +23,7 @@ async function main() {
 
     cli.parse();
 
-    console.log("Logging into GitHub...")
+    console.log(chalk.dim("Logging into GitHub..."))
     const authCodesRes = await fetch(`https://github.com/login/device/code?client_id=${client_id}`, {
         method: 'POST',
         headers: {
@@ -32,15 +33,15 @@ async function main() {
     });
 
     if (!authCodesRes.ok) {
-        console.error(`Failure logging into GitHub. ${authCodesRes.status} ${authCodesRes.statusText} ${await authCodesRes.text()}`);
+        console.error(chalk.bold.red(`Failure logging into GitHub. ${authCodesRes.status} ${authCodesRes.statusText} ${await authCodesRes.text()}`));
         return;
     }
 
     const {device_code, user_code, verification_uri, expires_in, interval} = await authCodesRes.json();
 
-    console.log("Please enter the following code in the GitHub website: ");
-    console.log(user_code);
-    console.log(`\n (If the website did not open, the URL is: ${verification_uri})`);
+    console.log(chalk.blueBright("\nPlease enter the following code in the GitHub website: "));
+    console.log("      "+chalk.bold.whiteBright.underline(user_code));
+    console.log(chalk.dim.italic(`\n(If the website did not open, the URL is: ${chalk.reset.underline(verification_uri)}${chalk.dim.italic(')')}`));
     open(verification_uri);
 
     const expiryTime = moment.now() + expires_in * 1000;
@@ -49,7 +50,7 @@ async function main() {
     while (!tokenJson) {
         await delay(interval * 1000);
         if (moment.now() >= expiryTime) {
-            console.error("Failure logging in. Timed out.");
+            console.error(chalk.bold.red("Failure logging in. Timed out."));
             return;
         }
 
@@ -71,9 +72,9 @@ async function main() {
 
     const {token, token_type, bearer} = tokenJson;
 
-    console.log("Successfully authenticated.");
+    console.log(chalk.green("Successfully authenticated!"));
 
-    console.log("Parsing issues from CSV file...");
+    console.log(chalk.dim("Parsing issues from CSV file..."));
 
     const file = fs.readFileSync(cli.opts()['csv']).toString()
 
@@ -115,14 +116,14 @@ async function main() {
         });
 
         if (res.ok) {
-            console.log(`Created issue #${(await res.json())['number']}.`)
+            console.log(chalk.dim(`Created issue ${chalk.reset.bold.cyan('#'+((await res.json())['number']))}`));
         } else {
-            console.error(`Failed to create issue! Error ${res.status}. Quitting.`);
+            console.error(chalk.bold.red(`Failed to create issue! Error ${res.status}. Quitting.`));
             return;
         }
     }
 
-    console.log("Complete!");
+    console.log(chalk.green("Complete!"));
 }
 
 await main();

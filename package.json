@@ -6,6 +6,7 @@
   "license": "MIT",
   "type": "module",
   "dependencies": {
+    "chalk": "^5.2.0",
     "commander": "^10.0.0",
     "csv-parse": "^5.3.5",
     "moment": "^2.29.4",
