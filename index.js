@@ -99,7 +99,20 @@ async function main() {
 
     const repo = cli.opts()['repo'].includes('/') ? cli.opts()['repo'] : `${user}/${cli.opts()['repo']}`;
 
+    const existingIssueTitles = (await fetch(`https://api.github.com/repos/${repo}/issues`, {
+        headers: {
+                    'Accept': 'application/vnd.github+json',
+                    'User-Agent': 'Issuesheet (Will BL)',
+                    'Authorization': `Bearer ${access_token}`
+        }
+    }).then(r => r.json())).map(i => i.title)
+
     for (const issue of issues) {
+        if (existingIssueTitles.includes(issue.title)) {
+            console.log(chalk.yellow(`Skipping issue with title '${issue.title.slice(0, 50) + (issue.title.length >= 50 ? "..." : "")}' as it already exists.`))
+            continue;
+        }
+
         let rateLimited = false;
         do {
             const res = await fetch(`https://api.github.com/repos/${repo}/issues`, {
