@@ -2,12 +2,25 @@ import fetch from "node-fetch";
 import queryString from "query-string";
 import open from "open";
 import moment from "moment";
+import { parse } from "csv-parse/sync";
+import fs from "fs";
+import {Command} from "commander";
 
 const delay = ms => new Promise(resolve => setTimeout(resolve, ms))
 
 const client_id = '***REMOVED***'
 
 async function main() {
+    const cli = new Command()
+        .name('issuesheet')
+        .description('Creates GitHub issues from a CSV file.')
+        .version('1.0.0')
+        .requiredOption('-c, --csv <csv_path>', 'path to CSV')
+        .requiredOption('-r, --repo <repo_name>', 'GitHub repo name')
+        .option('-t, --title_col <title_col>', 'name of column used for issue title', 'Description:');
+
+    cli.parse();
+
     console.log("Logging into GitHub...")
     const authCodesRes = await fetch(`https://github.com/login/device/code?client_id=${client_id}`, {
         method: 'POST',
@@ -56,6 +69,11 @@ async function main() {
     }
 
     const {token, token_type, bearer} = tokenJson;
+
+    console.log("Successfully authenticated.");
+
+    const file = fs.readFileSync(cli.opts().csv)
+
 }
 
 await main();

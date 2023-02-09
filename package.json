@@ -6,6 +6,7 @@
   "license": "MIT",
   "type": "module",
   "dependencies": {
+    "commander": "^10.0.0",
     "csv-parse": "^5.3.5",
     "moment": "^2.29.4",
     "node-fetch": "^3.3.0",
