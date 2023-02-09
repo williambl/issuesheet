@@ -100,26 +100,36 @@ async function main() {
     const repo = cli.opts()['repo'].includes('/') ? cli.opts()['repo'] : `${user}/${cli.opts()['repo']}`;
 
     for (const issue of issues) {
-        const res = await fetch(`https://api.github.com/repos/${repo}/issues`, {
-            method: 'POST',
-            headers: {
-                'Accept': 'application/vnd.github+json',
-                'User-Agent': 'Issuesheet (Will BL)',
-                'Authorization': `Bearer ${access_token}`
-            },
-            body: JSON.stringify({
-                'title': issue.title,
-                'body': issue.body
-            })
-        });
+        let rateLimited = false;
+        do {
+            const res = await fetch(`https://api.github.com/repos/${repo}/issues`, {
+                method: 'POST',
+                headers: {
+                    'Accept': 'application/vnd.github+json',
+                    'User-Agent': 'Issuesheet (Will BL)',
+                    'Authorization': `Bearer ${access_token}`
+                },
+                body: JSON.stringify({
+                    'title': issue.title,
+                    'body': issue.body
+                })
+            });
 
+            rateLimited = res.headers.has('retry-after');
 
-        if (res.ok) {
-            console.log(chalk.dim(`Created issue ${chalk.reset.bold.cyan('#'+((await res.json())['number']))}`));
-        } else {
-            console.error(chalk.bold.red(`Failed to create issue! Error ${res.status} (${await res.text()}). Quitting.`));
-            return;
-        }
+            if (rateLimited) {
+                console.log(chalk.yellow('Rate limited. Waiting for a bit before continuing...'))
+                await delay(Number.parseInt(res.headers.get('retry-after')) * 1000);
+                continue;
+            }
+
+            if (res.ok) {
+                console.log(chalk.dim(`Created issue ${chalk.reset.bold.cyan('#' + ((await res.json())['number']))}`));
+            } else {
+                console.error(chalk.bold.red(`Failed to create issue! Error ${res.status} (${await res.text()}). Quitting.`));
+                return;
+            }
+        } while (rateLimited);
     }
 
     console.log(chalk.green("Complete!"));
