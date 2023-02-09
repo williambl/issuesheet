@@ -17,7 +17,8 @@ async function main() {
         .version('1.0.0')
         .requiredOption('-c, --csv <csv_path>', 'path to CSV')
         .requiredOption('-r, --repo <repo_name>', 'GitHub repo name')
-        .option('-t, --title_col <title_col>', 'name of column used for issue title', 'Description:');
+        .option('--title_col <title_col>', 'name of column used for issue title', 'Description:')
+        .option('--body_cols <body_cols...>', 'name of columns used for issue body', ['Type:', 'Category:', 'Priority:', 'Notes:', 'Attachments:']);
 
     cli.parse();
 
@@ -72,8 +73,56 @@ async function main() {
 
     console.log("Successfully authenticated.");
 
-    const file = fs.readFileSync(cli.opts().csv)
+    console.log("Parsing issues from CSV file...");
 
+    const file = fs.readFileSync(cli.opts()['csv']).toString()
+
+
+    const issues = parse(file, {
+        columns: true,
+        skip_empty_lines: true
+    }).map(row => { return {
+        title: row[cli.opts()['title_col']],
+        desc: cli.opts()['body_cols'].map(col => {
+            `${col} ${row[col]}`
+        }).join('\n').trimEnd()
+    }});
+
+    const user = await (fetch("https://api.github.com/user", {
+        headers: {
+            'Accept': 'application/vnd.github+json',
+            'User-Agent': 'Issuesheet (Will BL)',
+            'Authorization': `Bearer ${token}`
+        }
+    }).then(r => r.json()).then(j => j['login']));
+
+    const repo = cli.opts()['repo'].includes('/') ? cli.opts()['repo'] : `${user}/${cli.opts()['repo']}`;
+
+    for (const issue of issues) {
+        console.log(JSON.stringify(issue));
+
+        const res = await fetch(`https://api.github.com/repos/${repo}/issues`, {
+            method: 'POST',
+            headers: {
+                'Accept': 'application/vnd.github+json',
+                'User-Agent': 'Issuesheet (Will BL)',
+                'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify({
+                'title': issue.title,
+                'body': issue.body
+            })
+        });
+
+        if (res.ok) {
+            console.log(`Created issue #${(await res.json())['number']}.`)
+        } else {
+            console.error(`Failed to create issue! Error ${res.status}. Quitting.`);
+            return;
+        }
+    }
+
+    console.log("Complete!");
 }
 
 await main();
