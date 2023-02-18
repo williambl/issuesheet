@@ -84,9 +84,9 @@ async function main() {
         skip_empty_lines: true
     }).map(row => { return {
         title: row[cli.opts()['title_col']],
-        desc: cli.opts()['body_cols'].map(col => {
+        desc: cli.opts()['body_cols'].map(col =>
             `${col} ${row[col]}`
-        }).join('\n').trimEnd()
+        ).join('\n').trimEnd()
     }});
 
     const user = await (fetch("https://api.github.com/user", {
